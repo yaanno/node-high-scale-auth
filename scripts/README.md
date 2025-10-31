@@ -12,6 +12,18 @@ This directory contains testing scripts for the High-Performance Auth Demo proje
 
 ### 🚀 Quick Start
 
+**`smoke-test.sh`** - Performance validation and smoke testing
+
+```bash
+./scripts/smoke-test.sh
+```
+
+- Validates system under load (150+ requests)
+- Tests sequential and concurrent performance
+- Measures throughput and response times
+- Validates event loop remains non-blocking
+- **Run this to validate the architecture works!**
+
 **`interactive-test.sh`** - Interactive testing script
 
 ```bash
