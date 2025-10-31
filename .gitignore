@@ -98,3 +98,33 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+
+# ==========================================
+# Go specific
+# ==========================================
+
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# Go build cache
+.cache/
+
+# Go sum database (keep go.sum for reproducible builds)
+# go.sum should be committed, but add this if you want to ignore it
+# go.sum
