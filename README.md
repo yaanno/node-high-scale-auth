@@ -151,6 +151,29 @@ docker-compose down -v
 
 ## 🧪 Testing
 
+### Quick Start with Test Scripts
+
+We provide automated test scripts for easy verification:
+
+```bash
+# Make scripts executable (first time only)
+chmod +x scripts/*.sh
+
+# Run the full end-to-end test (recommended first step)
+./scripts/test-full-flow.sh
+
+# Or run individual test suites
+./scripts/test-login.sh          # Test authentication
+./scripts/test-authorization.sh  # Test authorization
+
+# Or use the interactive tester
+./scripts/interactive-test.sh    # Manual testing with prompts
+```
+
+📖 **See [`scripts/README.md`](scripts/README.md) for detailed documentation on all test scripts.**
+
+---
+
 ### Demo User Credentials
 
 | Username | Password      | User ID |

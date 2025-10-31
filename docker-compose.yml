@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # ----------------------------------------------------
   # 1. NGINX: The External Authorization Proxy / Gateway
@@ -16,8 +14,8 @@ services:
     networks:
       - backend-net
     depends_on:
-      - node-api
-      - auth-hasher
+      - api-service
+      - auth-service
     restart: always
 
   # ----------------------------------------------------
