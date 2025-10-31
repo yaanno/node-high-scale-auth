@@ -1,0 +1,93 @@
+version: "3.8"
+
+services:
+  # ----------------------------------------------------
+  # 1. NGINX: The External Authorization Proxy / Gateway
+  # ----------------------------------------------------
+  nginx:
+    container_name: nginx_proxy
+    # Placeholder: You'll build this image with your custom nginx.conf
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      # Expose Nginx to the public (host) on port 80
+      - "80:80"
+    networks:
+      - backend-net
+    depends_on:
+      - node-api
+      - auth-hasher
+    restart: always
+
+  # ----------------------------------------------------
+  # 2. AUTH/HASHER SERVICE: CPU-Bound Worker (Go/Rust)
+  # ----------------------------------------------------
+  auth-service:
+    container_name: auth_service
+    # Placeholder for your Go/Rust service implementation
+    build:
+      context: ./auth-hasher-service
+      dockerfile: Dockerfile
+    environment:
+      # Nginx uses this internal port to hit the /validate endpoint
+      - PORT=8080
+      - DATABASE_URL=postgres://user:password@db:5432/authdb
+    networks:
+      - backend-net
+    depends_on:
+      - db
+    # Set high CPU requests for this service (e.g., 2 full cores)
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 256m
+    restart: always
+
+  # ----------------------------------------------------
+  # 3. NODE.JS API: I/O-Bound Worker
+  # ----------------------------------------------------
+  api-service:
+    container_name: api_service
+    # Placeholder for your Node.js application
+    build:
+      context: ./api-service
+      dockerfile: Dockerfile
+    environment:
+      # Nginx uses this internal port for the main API endpoints
+      - PORT=3000
+    networks:
+      - backend-net
+    # Keep CPU limits low, as it's I/O bound
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512m
+    restart: always
+
+  # ----------------------------------------------------
+  # 4. DATABASE: User Data Storage
+  # ----------------------------------------------------
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: authdb
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - backend-net
+
+# ----------------------------------------------------
+# Define Internal Network and Volumes
+# ----------------------------------------------------
+networks:
+  backend-net:
+    driver: bridge
+
+volumes:
+  db-data:
