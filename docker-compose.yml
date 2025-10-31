@@ -27,7 +27,7 @@ services:
     container_name: auth_service
     # Placeholder for your Go/Rust service implementation
     build:
-      context: ./auth-hasher-service
+      context: ./auth-service
       dockerfile: Dockerfile
     environment:
       # Nginx uses this internal port to hit the /validate endpoint
