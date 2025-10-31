@@ -347,7 +347,19 @@ This is a **demonstration project**. For production, you would need:
 
 ---
 
-## 📝 License
+## � Troubleshooting
+
+Having issues? Check the **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** guide for common problems and solutions.
+
+Quick fixes:
+
+- **Login fails**: Regenerate bcrypt hashes with `scripts/generate-hashes.js`
+- **Services won't start**: Check logs with `docker compose logs`
+- **Database issues**: Reset with `docker compose down -v && docker compose up -d`
+
+---
+
+## �📝 License
 
 This project is for educational purposes. Feel free to use and modify for learning.
 

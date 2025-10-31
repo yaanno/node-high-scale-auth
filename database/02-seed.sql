@@ -23,13 +23,13 @@
 -- Note: These hashes were generated with cost factor 10
 INSERT INTO users (username, password_hash) VALUES
     -- alice / password123
-    ('alice', '$2a$10$xK9Y7VJZk0vX7x9uH8.D1.eZhPzXxN7Xv5m5kMqF5J8YqQ6X8J5Ym'),
+    ('alice', '$2b$10$GxD1o2o5AbfW9QpoyS9e1.0HmRAYxv2xX9dw1s0z.KyWFaOOgZu/.'),
     
     -- bob / securepass456
-    ('bob', '$2a$10$rN5XnJ9Y8vD6mH7K0xL4X.2JzP9nC5qR8T3wF6V1M7yN4tQ2vB8Ye'),
+    ('bob', '$2b$10$/gDo0D1/l9sPzQjqOCg81.ET/oEI1KIe9zyWJNSMH5vUS98TCumlq'),
     
     -- admin / adminpass789
-    ('admin', '$2a$10$hM8K4T6R9xY3nL5J2vN9P.7FzQ3wD1eS5G4yH8T2nV6pR9mK0jL3X');
+    ('admin', '$2b$10$r38y6BDvzVtKVK6IoBlm5.8ADRmxRF3zCT4ylgrQwPK7FrPjKoh9i');
 
 -- Log successful seed completion
 DO $$
