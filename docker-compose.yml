@@ -19,11 +19,11 @@ services:
     restart: always
 
   # ----------------------------------------------------
-  # 2. AUTH/HASHER SERVICE: CPU-Bound Worker (Go/Rust)
+  # 2. AUTH/HASHER SERVICE: CPU-Bound Worker (Go)
   # ----------------------------------------------------
   auth-service:
     container_name: auth_service
-    # Placeholder for your Go/Rust service implementation
+    # Go implementation of the auth service
     build:
       context: ./auth-service
       dockerfile: Dockerfile
@@ -43,6 +43,38 @@ services:
           cpus: "2.0"
           memory: 256m
     restart: always
+
+  # ----------------------------------------------------
+  # 2b. AUTH/HASHER SERVICE (RUST): CPU-Bound Worker
+  # Alternative Rust implementation for comparison
+  # (Disabled by default - uncomment in nginx.conf to use)
+  # ----------------------------------------------------
+  auth-service-rust:
+    container_name: auth_service_rust
+    # Rust implementation of the auth service
+    build:
+      context: ./auth-service-rust
+      dockerfile: Dockerfile
+    environment:
+      # Internal port for validation requests
+      - PORT=8081
+      - DATABASE_URL=postgres://postgres:postgres@db:5432/database?sslmode=disable
+      - JWT_SECRET=demo-secret-key-please-change-in-production
+    ports:
+      - "8081:8081"
+    networks:
+      - backend-net
+    depends_on:
+      - db
+    # Set high CPU requests for this service (e.g., 2 full cores)
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 256m
+    restart: always
+    profiles:
+      - rust # Only starts when --profile rust is used
 
   # ----------------------------------------------------
   # 3. NODE.JS API: I/O-Bound Worker
