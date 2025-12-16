@@ -65,9 +65,24 @@ This project demonstrates a **polyglot microservice architecture** that maximize
 | Component        | Technology        | Role                                    | CPU Allocation |
 | ---------------- | ----------------- | --------------------------------------- | -------------- |
 | **Nginx**        | Nginx             | Security gateway, routing, auth_request | Edge           |
-| **Auth Service** | Go                | CPU-intensive crypto (bcrypt, JWT)      | 2 cores        |
+| **Auth Service** | Go & Rust         | CPU-intensive crypto (bcrypt, JWT)      | 2 cores        |
 | **API Service**  | Node.js + Express | I/O-bound business logic                | 0.5 core       |
 | **Database**     | PostgreSQL        | Persistent user storage                 | Standard       |
+
+### Dual Auth Service Implementation
+
+This project includes **two implementations** of the Auth Service to demonstrate polyglot architecture:
+
+- **Go Implementation** (`auth-service/`): Fast, battle-tested, great for learning microservices
+- **Rust Implementation** (`auth-service-rust/`): Type-safe, modern async patterns, excellent performance
+
+Both services are **fully interoperable**:
+- Share the same `JWT_SECRET` environment variable
+- Use identical JWT signing/validation algorithms (HMAC-SHA256)
+- Connect to the same PostgreSQL database
+- Can validate tokens created by the other (cross-validation)
+
+Nginx load balances between them, making this a practical example of **horizontal scaling** with multiple service implementations.
 
 ---
 
@@ -118,18 +133,24 @@ This project demonstrates a **polyglot microservice architecture** that maximize
    cd node-high-scale-auth
    ```
 
-2. **Start all services**
+2. **Start all services (Go + Nginx + API)**
 
    ```bash
    docker-compose up --build
    ```
 
-3. **Wait for initialization**
+3. **Start all services including Rust auth-service**
+
+   ```bash
+   docker-compose --profile rust up --build
+   ```
+
+4. **Wait for initialization**
    You'll see logs indicating:
 
    - Database schema created
    - Seed data inserted (3 demo users)
-   - Auth service ready on port 8080
+   - Auth service ready (Go on port 8080, optionally Rust on 8081)
    - API service ready on port 3000
    - Nginx listening on port 80
 
@@ -257,9 +278,19 @@ curl http://localhost/api/v1/user/profile
 │   ├── database.go           # PostgreSQL operations
 │   └── jwt.go                # JWT signing & validation
 │
+├── auth-service-rust/        # Rust CPU-bound service (alternative)
+│   ├── Cargo.toml            # Rust dependencies
+│   ├── Dockerfile
+│   └── src/
+│       ├── main.rs           # Entry point & HTTP server
+│       ├── handlers.rs       # /login and /validate endpoints
+│       ├── db.rs             # PostgreSQL operations
+│       ├── jwt.rs            # JWT signing & validation
+│       └── models.rs         # Data structures
+│
 ├── nginx/                    # Reverse proxy & security gateway
 │   ├── Dockerfile
-│   └── nginx.conf            # auth_request configuration
+│   └── nginx.conf            # auth_request configuration (load balanced)
 │
 └── database/                 # PostgreSQL initialization
     ├── 01-schema.sql         # Table definitions
@@ -289,6 +320,27 @@ Configured in `docker-compose.yml`:
 
 - **Auth Service**: 2 CPU cores, 256MB RAM (CPU-intensive)
 - **API Service**: 0.5 CPU core, 512MB RAM (I/O-bound)
+
+---
+
+## 📊 Load Balancing & Service Discovery
+
+Nginx automatically load balances between auth service instances:
+
+```nginx
+upstream auth_service_upstream {
+    server auth-service:8080;      # Go implementation
+    server auth-service-rust:8081; # Rust implementation
+}
+```
+
+**How it works**:
+- Client logs in → Nginx routes to Go **or** Rust (round-robin)
+- Token is generated with the same `JWT_SECRET`
+- When validating, Nginx may route to the other implementation
+- Both services validate successfully (cross-validation via shared secret)
+
+This demonstrates how to scale horizontally: add more instances (Go or Rust) and Nginx automatically distributes requests. Each service is stateless and can validate tokens from any other instance.
 
 ---
 
