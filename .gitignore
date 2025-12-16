@@ -128,3 +128,10 @@ vendor/
 # Go sum database (keep go.sum for reproducible builds)
 # go.sum should be committed, but add this if you want to ignore it
 # go.sum
+
+# Rust specific
+target
+**/*.rs.bk
+**/*.rs.bk2
+**/*.rs.swp
+**/*.rs.swo
