@@ -406,6 +406,17 @@ This is a **demonstration project**. For production, you would need:
 
 ---
 
+### Scaling to Production
+
+**Wondering how to scale this to thousands of concurrent users?** Check out **[SCALING.md](SCALING.md)** for a comprehensive guide on:
+- Architecture for 10,000+ concurrent users
+- Horizontal scaling strategies
+- Database optimization and connection pooling
+- Cost analysis and performance expectations
+- Recommended deployment patterns (Kubernetes, AWS, etc.)
+
+---
+
 ## � Troubleshooting
 
 Having issues? Check the **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** guide for common problems and solutions.
