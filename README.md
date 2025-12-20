@@ -54,7 +54,7 @@ This project demonstrates a **polyglot microservice architecture** that maximize
      │ Generate JWT                  │
      │                          ┌────▼────────────-─┐
      |                          │  API Service      │
-┌────▼─────────┐                │  (Node.js)        │
+┌────▼────────┐                 │  (Node.js)        │
 │  Database   │◄──────────────-─┤  - I/O-bound      │
 │  (Postgres) │                 │  - Validates JWT  │
 └─────────────┘                 │  - Business logic │
