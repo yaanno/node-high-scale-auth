@@ -35,30 +35,30 @@ This project demonstrates a **polyglot microservice architecture** that maximize
      │
 ┌────▼──────────────────────────────────────────────┐
 │  Nginx (Reverse Proxy & Security Gateway)         │
-│  - Routes traffic                                  │
-│  - Enforces auth via auth_request                  │
-│  - No header injection (uses JWT claims)           │
+│  - Routes traffic                                 │
+│  - Enforces auth via auth_request                 │
+│  - No header injection (uses JWT claims)          │
 └────┬──────────────────────────┬───────────────────┘
-     │                           │
-     │ /login                    │ /api/v1/*
-     │ (no auth check)           │ (auth check required)
-     │                           │
+     │                          │
+     │ /login                   │ /api/v1/*
+     │ (no auth check)          │ (auth check required)
+     │                          │
 ┌────▼─────────────┐      ┌─────▼──────────────────┐
 │  Auth Service    │      │  Sub-request:          │
-│  (Go / Rust)            │◄─────┤  /_auth_validation     │
+│  (Go / Rust)     │◄─────┤  /_auth_validation     │
 │  - CPU-bound     │      │  (internal)            │
 │  - bcrypt        │      └────────────────────────┘
-│  - JWT ops       │                │
-└────┬─────────────┘                │ 200 OK (JWT validated)
+│  - JWT ops       │                 │
+└────┬─────────────┘                 │ 200 OK (JWT validated)
      │                               │
      │ Generate JWT                  │
-     │                          ┌────▼─────────────┐
-     ▼                          │  API Service     │
-┌─────────────┐                │  (Node.js)       │
-│  Database   │◄───────────────┤  - I/O-bound     │
-│  (Postgres) │                │  - Validates JWT │
-└─────────────┘                │  - Business logic│
-                                └──────────────────┘
+     │                          ┌────▼────────────-─┐
+     |                          │  API Service      │
+┌────▼─────────┐                │  (Node.js)        │
+│  Database   │◄──────────────-─┤  - I/O-bound      │
+│  (Postgres) │                 │  - Validates JWT  │
+└─────────────┘                 │  - Business logic │
+                                └────────────────-──┘
 ```
 
 ### Component Breakdown
