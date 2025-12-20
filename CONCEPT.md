@@ -21,7 +21,7 @@ This repository contains a demonstration of a **high-performance microservice ar
 
 | Component               | Technology            | Primary Role                                                     | Performance Priority                      |
 | :---------------------- | :-------------------- | :--------------------------------------------------------------- | :---------------------------------------- |
-| **API Service**         | Node.js/Express       | **Core Business Logic (I/O)**. Reads trusted `X-User-ID` header. | **I/O** (Fast concurrency, low CPU)       |
+| **API Service**         | Node.js/Express       | **Core Business Logic (I/O)**. Extracts and validates JWT claims from Authorization header. | **I/O** (Fast concurrency, low CPU)       |
 | **Auth/Hasher Service** | Go/Rust (Placeholder) | **Security/Cryptography (CPU)**. Handles bcrypt and JWT logic.   | **CPU** (Fast execution, high throughput) |
 | **Reverse Proxy**       | Nginx                 | **Security Gate/Routing**. Implements the auth_request pattern.  | **Edge** Routing and Policy Enforcement   |
 | **Database**            | PostgreSQL            | Persistent storage for user credentials (password hashes).       | **I/O** (Used only by Auth/Hasher)        |
@@ -49,8 +49,8 @@ This process validates the JWT before the request is allowed to reach the Node.j
 1.  Client sends a request (with JWT in the Authorization header) to the protected **/api/v1/** endpoint.
 2.  **Nginx** intercepts the request and sends a sub-request to the Auth/Hasher service's internal **/validate** endpoint (**auth_request**).
 3.  The Auth/Hasher service performs the **CPU-intensive JWT validation** (signature and expiry check) without hitting the database.
-    - **If valid:** It responds to Nginx with a **200 OK** and the extracted User ID in an `X-User-ID` response header.
+    - **If valid:** It responds to Nginx with a **200 OK** status.
     - **If invalid:** It responds with a **401 Unauthorized** status, which Nginx immediately returns to the client.
-4.  **Nginx** captures the User ID from the successful response header and **injects it** into the original request as the **X-User-ID** header.
-5.  Nginx forwards the now authenticated request (with the trusted `X-User-ID`) to the **Node.js API Service**.
-6.  The **Node.js API Service** reads the trusted `X-User-ID` header and executes its business logic. **Its Event Loop remains safe and non-blocking.**
+4.  **Nginx** forwards the authenticated request to the **Node.js API Service** (the original Authorization header is passed through).
+5.  The **Node.js API Service** extracts the JWT from the Authorization header and validates the JWT claims (issuer, audience, signature).
+6.  The **Node.js API Service** reads the user ID from the JWT's subject (`sub`) claim and executes its business logic. **Its Event Loop remains safe and non-blocking.**

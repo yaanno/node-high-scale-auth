@@ -10,15 +10,9 @@ pub fn generate_jwt(user_id: i32, secret: &str) -> Result<String, jsonwebtoken::
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_secs() as usize;
-    let expiration = now + (24 * 60 * 60); // 24 hours
+    let expiration = now + (5 * 60); // 5 minutes
 
-    let claims = Claims {
-        user_id,
-        exp: expiration,
-        iat: now,
-        iss: "auth-service".to_string(),
-    };
-
+    let claims = Claims::new(user_id, expiration, now);
     let encoding_key = EncodingKey::from_secret(secret.as_bytes());
     encode(&Header::default(), &claims, &encoding_key)
 }
@@ -27,6 +21,11 @@ pub fn generate_jwt(user_id: i32, secret: &str) -> Result<String, jsonwebtoken::
 /// This is called by Nginx via the /validate endpoint
 pub fn validate_jwt(token: &str, secret: &str) -> Result<Claims, jsonwebtoken::errors::Error> {
     let decoding_key = DecodingKey::from_secret(secret.as_bytes());
-    let token_data = decode::<Claims>(token, &decoding_key, &Validation::default())?;
+
+    // Set up validation to check audience claim
+    let mut validation = Validation::default();
+    validation.set_audience(&["api-service"]);
+
+    let token_data = decode::<Claims>(token, &decoding_key, &validation)?;
     Ok(token_data.claims)
 }

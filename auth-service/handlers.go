@@ -111,6 +111,7 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	// Return JWT token to client
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Authorization", "Bearer "+token)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(LoginResponse{
 		Token: token,
@@ -156,10 +157,8 @@ func handleValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("[AUTH] VALIDATION SUCCESS: Token valid for user ID %d", userID)
-
-	// CRITICAL: Inject X-User-ID header for Nginx to forward to API service
-	// This is the trusted header that the Node.js service will read
-	w.Header().Set("X-User-ID", extractUserIDString(userID))
+	log.Printf("[AUTH] VALIDATION SUCCESS: Token valid for user ID %s", userID)
+	// Return 200 OK - JWT validation successful
+	// Nginx will allow the request to proceed. The API service will validate the JWT claims.
 	w.WriteHeader(http.StatusOK)
 }

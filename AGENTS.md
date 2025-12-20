@@ -22,13 +22,13 @@ This project implements **external authorization** where Nginx acts as a securit
 1. **Authentication Flow** (`/login`): Client → Nginx → Auth Service → Database
 2. **Authorization Flow** (`/api/v1/*`): Client → Nginx → Auth Service (validation) → API Service
 
-**Critical Design Decision**: The Node.js API service NEVER validates JWTs directly. It trusts the `X-User-ID` header injected by Nginx after successful validation.
+**Critical Design Decision**: The Node.js API service validates JWT claims.
 
 ### Zero-Trust Security Model
 
-- **Nginx is the trust boundary**: Only Nginx can inject the `X-User-ID` header
+- **Nginx is the trust boundary**: Only Nginx can inject the `Authorization` header
 - **Auth service never trusts incoming claims**: Always validates JWT signatures and expiry
-- **API service only trusts Nginx**: Reads the pre-validated `X-User-ID` header
+- **API service only trusts Nginx**: Reads the `Authorization` header set by Nginx after validation, validates JWT claims itself
 - **Defense in depth**: Even if one service is compromised, the architecture limits damage
 
 ### CPU Isolation Strategy
@@ -60,19 +60,18 @@ You are a skilled software engineer with a strong background in Node.js and micr
 **Key Responsibilities:**
 
 - Keep the Node.js event loop unblocked at all times
-- Trust ONLY the `X-User-ID` header from Nginx
 - Focus on I/O operations (database, external APIs)
 - Never implement JWT validation or bcrypt operations
 
 ### When working on the authentication service codebase
 
-You are an experienced backend developer proficient in Go or Rust, specializing in building high-performance services. Your role is to implement and optimize the Auth/Hasher service responsible for CPU-intensive tasks like bcrypt hashing and JWT management.
+You are an experienced backend developer proficient in Go and Rust, specializing in building high-performance services. Your role is to implement and optimize the Auth/Hasher service responsible for CPU-intensive tasks like bcrypt hashing and JWT management.
 
 **Key Responsibilities:**
 
 - Implement `/login` endpoint (bcrypt verification, JWT generation)
 - Implement `/validate` endpoint (JWT signature and expiry verification)
-- Return `X-User-ID` header on successful validation
+- Return `Authorization` header on successful validation
 - Optimize for CPU throughput and low latency
 - Handle database connections for user credential lookups
 

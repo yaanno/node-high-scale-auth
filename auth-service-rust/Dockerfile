@@ -23,8 +23,8 @@ RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/
 # Copy the compiled binary from builder stage
 COPY --from=builder /app/target/release/auth-service-rust /app/auth-service
 
-# Expose port 8080
-EXPOSE 8080
+# Expose port 8081
+EXPOSE 8081
 
 # Run the auth service
 CMD ["./auth-service"]

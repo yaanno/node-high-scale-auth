@@ -15,26 +15,20 @@ func setJWTSecret(secret string) {
 	jwtSecretKey = []byte(secret)
 }
 
-// Claims represents the JWT payload structure
-type Claims struct {
-	UserID int `json:"user_id"`
-	jwt.RegisteredClaims
-}
-
 // generateJWT creates a signed JWT token for the given user ID
 // This is CPU-intensive due to HMAC-SHA256 signing
 func generateJWT(userID int) (string, error) {
 	// Token expires in 24 hours (for demo purposes)
-	expirationTime := time.Now().Add(24 * time.Hour)
+	now := time.Now()
 
 	// Create claims with user ID and expiration
-	claims := &Claims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "auth-service",
-		},
+	claims := jwt.RegisteredClaims{
+		ID:        strconv.Itoa(userID),
+		Subject:   strconv.Itoa(userID),
+		Audience:  []string{"api-service"},
+		ExpiresAt: jwt.NewNumericDate(now.Add(3 * time.Minute)),
+		IssuedAt:  jwt.NewNumericDate(now),
+		Issuer:    "auth-service",
 	}
 
 	// Create token with claims
@@ -51,8 +45,8 @@ func generateJWT(userID int) (string, error) {
 
 // validateJWT verifies the JWT signature and extracts the user ID
 // This is CPU-intensive due to HMAC-SHA256 verification
-func validateJWT(tokenString string) (int, error) {
-	claims := &Claims{}
+func validateJWT(tokenString string) (string, error) {
+	claims := &jwt.RegisteredClaims{}
 
 	// Parse and validate the token (CPU-intensive operation)
 	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -64,17 +58,12 @@ func validateJWT(tokenString string) (int, error) {
 	})
 
 	if err != nil {
-		return 0, fmt.Errorf("failed to parse token: %w", err)
+		return "", fmt.Errorf("failed to parse token: %w", err)
 	}
 
 	if !token.Valid {
-		return 0, fmt.Errorf("invalid token")
+		return "", fmt.Errorf("invalid token")
 	}
 
-	return claims.UserID, nil
-}
-
-// extractUserIDString converts user ID to string for header injection
-func extractUserIDString(userID int) string {
-	return strconv.Itoa(userID)
+	return claims.ID, nil
 }

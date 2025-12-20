@@ -31,13 +31,13 @@ This project demonstrates a **polyglot microservice architecture** that maximize
 │ Client  │
 └────┬────┘
      │
-     │ HTTP Request
+     │ HTTP Request (JWT in Authorization header)
      │
 ┌────▼──────────────────────────────────────────────┐
 │  Nginx (Reverse Proxy & Security Gateway)         │
 │  - Routes traffic                                  │
 │  - Enforces auth via auth_request                  │
-│  - Injects trusted X-User-ID header                │
+│  - No header injection (uses JWT claims)           │
 └────┬──────────────────────────┬───────────────────┘
      │                           │
      │ /login                    │ /api/v1/*
@@ -45,19 +45,20 @@ This project demonstrates a **polyglot microservice architecture** that maximize
      │                           │
 ┌────▼─────────────┐      ┌─────▼──────────────────┐
 │  Auth Service    │      │  Sub-request:          │
-│  (Go)            │◄─────┤  /_auth_validation     │
+│  (Go / Rust)            │◄─────┤  /_auth_validation     │
 │  - CPU-bound     │      │  (internal)            │
 │  - bcrypt        │      └────────────────────────┘
 │  - JWT ops       │                │
-└────┬─────────────┘                │ 200 OK + X-User-ID
+└────┬─────────────┘                │ 200 OK (JWT validated)
      │                               │
      │ Generate JWT                  │
      │                          ┌────▼─────────────┐
      ▼                          │  API Service     │
 ┌─────────────┐                │  (Node.js)       │
 │  Database   │◄───────────────┤  - I/O-bound     │
-│  (Postgres) │                │  - Business logic│
-└─────────────┘                └──────────────────┘
+│  (Postgres) │                │  - Validates JWT │
+└─────────────┘                │  - Business logic│
+                                └──────────────────┘
 ```
 
 ### Component Breakdown
@@ -104,15 +105,19 @@ Nginx load balances between them, making this a practical example of **horizonta
 ```
 1. Client → GET /api/v1/user/profile (with JWT in Authorization header)
 2. Nginx → Internal sub-request to /_auth_validation
-3. Auth Service → Validate JWT signature (CPU-intensive)
-4. Auth Service → Return 200 OK + X-User-ID header
-5. Nginx → Inject X-User-ID into original request
-6. Nginx → Forward to API Service (with trusted header)
-7. API Service → Read X-User-ID, execute business logic
-8. API Service → Client {user data}
+3. Auth Service → Validate JWT signature and expiry (CPU-intensive)
+4. Auth Service → Return 200 OK (validation successful)
+5. Nginx → Forward request to API Service (passes through Authorization header)
+6. API Service → Extract JWT from Authorization header
+7. API Service → Validate JWT claims (issuer, audience, expiry)
+8. API Service → Extract user ID from JWT subject claim, execute business logic
+9. API Service → Client {user data}
 ```
 
-**Critical Security Principle**: The Node.js API service **never** validates JWTs. It trusts only the `X-User-ID` header injected by Nginx after successful validation.
+**Critical Security Principle**: 
+- Both the Auth Service and Node.js API Service validate JWT signatures independently
+- Services rely exclusively on JWT claims, not Nginx-injected headers
+- This defense-in-depth approach ensures that even if the Node.js service is compromised, it cannot access unvalidated claims
 
 ---
 
@@ -123,6 +128,7 @@ Nginx load balances between them, making this a practical example of **horizonta
 - Docker & Docker Compose
 - curl (for testing)
 - (Optional) Go 1.21+ for local auth service development
+- (Optional) Rust 1.70+ for local auth service development
 
 ### Quick Start
 
@@ -268,6 +274,7 @@ curl http://localhost/api/v1/user/profile
 ├── api-service/              # Node.js I/O-bound service
 │   ├── Dockerfile
 │   ├── package.json
+│   ├── auth.js                # Middleware for validating JWT claims
 │   └── server.js
 │
 ├── auth-service/             # Go CPU-bound service

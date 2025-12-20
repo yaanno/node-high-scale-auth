@@ -115,8 +115,8 @@ docker exec nginx_proxy cat /etc/nginx/conf.d/nginx.conf
 Verify:
 
 - `auth_request /_auth_validation;` is present
-- `auth_request_set $user_id $upstream_http_x_user_id;` is present
-- `proxy_set_header X-User-ID $user_id;` is present
+- JWT validation is working (check auth service logs for validation errors)
+- Authorization header is being passed through correctly
 
 **Reload Nginx**:
 

@@ -1,10 +1,9 @@
 use axum::{
-    extract::{Query, State},
-    http::StatusCode,
+    extract::State,
+    http::{HeaderMap, StatusCode},
     Json,
 };
 use bcrypt::verify;
-use serde::Deserialize;
 use sqlx::PgPool;
 
 use crate::models::{ErrorResponse, LoginRequest, LoginResponse};
@@ -100,30 +99,67 @@ pub async fn handle_login(
     Ok(Json(LoginResponse { token }))
 }
 
-/// ValidateQuery represents query parameters for GET /validate
-#[derive(Debug, Deserialize)]
-pub struct ValidateQuery {
-    pub token: String,
-}
-
 /// Handle GET /validate requests
 /// Validates JWT token (called by Nginx via auth_request directive)
-/// Returns user_id as X-User-ID header via response headers
+/// Returns 200 if valid, otherwise returns error status
 pub async fn handle_validate(
     State(state): State<AppState>,
-    Query(query): Query<ValidateQuery>,
-) -> Result<(StatusCode, [(String, String); 1]), (StatusCode, Json<ErrorResponse>)> {
+    headers: HeaderMap,
+) -> Result<StatusCode, (StatusCode, Json<ErrorResponse>)> {
+    // Extract Authorization header
+    let auth_header = match headers.get("Authorization") {
+        Some(value) => match value.to_str() {
+            Ok(header) => header,
+            Err(_) => {
+                println!("[AUTH] VALIDATION FAILED: Invalid Authorization header encoding");
+                return Err((
+                    StatusCode::UNAUTHORIZED,
+                    Json(ErrorResponse {
+                        error: "Invalid Authorization header".to_string(),
+                        code: "INVALID_HEADER".to_string(),
+                    }),
+                ));
+            }
+        },
+        None => {
+            println!("[AUTH] VALIDATION FAILED: Missing Authorization header");
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                Json(ErrorResponse {
+                    error: "Missing Authorization header".to_string(),
+                    code: "MISSING_TOKEN".to_string(),
+                }),
+            ));
+        }
+    };
+
+    // Parse "Bearer <token>" format
+    let token = match auth_header.strip_prefix("Bearer ") {
+        Some(t) => t,
+        None => {
+            println!("[AUTH] VALIDATION FAILED: Invalid Authorization header format");
+            return Err((
+                StatusCode::UNAUTHORIZED,
+                Json(ErrorResponse {
+                    error: "Invalid Authorization header format".to_string(),
+                    code: "INVALID_FORMAT".to_string(),
+                }),
+            ));
+        }
+    };
+
     println!("[AUTH] Validating token...");
 
     // ========================================
     // CPU-INTENSIVE OPERATION: JWT verification
     // Validates signature and expiration
     // ========================================
-    let claims = match jwt::validate_jwt(&query.token, &state.jwt_secret) {
+
+    match jwt::validate_jwt(token, &state.jwt_secret) {
         Ok(claims) => {
             println!(
                 "[AUTH] SUCCESS: Token validated for user {}",
-                claims.user_id
+                claims.user_id()
             );
             claims
         }
@@ -139,9 +175,7 @@ pub async fn handle_validate(
         }
     };
 
-    // Return 200 OK with X-User-ID header (Nginx reads this)
-    Ok((
-        StatusCode::OK,
-        [("X-User-ID".to_string(), claims.user_id.to_string())],
-    ))
+    // Return 200 OK - JWT validation successful
+    // Nginx will allow the request to proceed. The API service will validate the JWT claims.
+    Ok(StatusCode::OK)
 }

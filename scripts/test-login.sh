@@ -20,19 +20,20 @@ echo -e "${BLUE}  Login Test - Multiple Users            ${NC}"
 echo -e "${BLUE}===========================================${NC}"
 echo ""
 
-# Test user credentials
-declare -A USERS=(
-    ["alice"]="password123"
-    ["bob"]="securepass456"
-    ["admin"]="adminpass789"
+# Test user credentials (as colon-separated username:password pairs)
+USERS=(
+    "alice:password123"
+    "bob:securepass456"
+    "admin:adminpass789"
 )
 
 SUCCESS_COUNT=0
 FAIL_COUNT=0
 
 # Test each user
-for username in "${!USERS[@]}"; do
-    password="${USERS[$username]}"
+for user_pair in "${USERS[@]}"; do
+    username="${user_pair%%:*}"
+    password="${user_pair##*:}"
     
     echo -e "${YELLOW}Testing: ${username}${NC}"
     

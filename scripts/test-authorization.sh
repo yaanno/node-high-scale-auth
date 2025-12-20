@@ -123,7 +123,7 @@ echo -e "${YELLOW}Note:${NC} This tests what happens if someone tries to bypass 
 echo -e "${YELLOW}(This test will fail if api-service port is not exposed)${NC}"
 
 # Try to access the Node.js service directly on port 3000
-RESPONSE=$(curl -s -w "\n%{http_code}" --connect-timeout 2 "http://localhost:3000${API_ENDPOINT}" 2>/dev/null || echo -e "\nconnection_failed")
+RESPONSE=$(curl -s -w "\n%{http_code}" --connect-timeout 2 "http://localhost:3000${API_ENDPOINT}" -H "Authorization: Bearer ${TOKEN}" 2>/dev/null || echo -e "\nconnection_failed")
 
 if echo "$RESPONSE" | grep -q "connection_failed"; then
     echo -e "${GREEN}✅ PASSED${NC} - API service not directly accessible (good security)"
@@ -133,14 +133,14 @@ else
     HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
     BODY=$(echo "$RESPONSE" | sed '$d')
     
-    if [ "$HTTP_CODE" = "500" ]; then
-        echo -e "${GREEN}✅ PASSED${NC} - API service returns 500 without X-User-ID header"
-        echo "   (Service correctly requires trusted header from Nginx)"
+    if [ "$HTTP_CODE" = "200" ]; then
+        echo -e "${GREEN}✅ PASSED${NC} - API service correctly validates JWT claims"
+        echo "   (Service extracts and validates JWT from Authorization header)"
         ((SUCCESS_COUNT++))
     else
-        echo -e "${YELLOW}⚠️  WARNING${NC} - API service accessible without Nginx (HTTP $HTTP_CODE)"
-        echo "   This is OK for demo, but shows importance of network isolation"
-        ((SUCCESS_COUNT++))
+        echo -e "${YELLOW}⚠️  WARNING${NC} - API service returned HTTP $HTTP_CODE"
+        echo "   Expected 200 OK when JWT is valid"
+        ((FAIL_COUNT++))
     fi
 fi
 echo ""
